@@ -21,18 +21,33 @@ func main() {
         fmt.Println(err)
     }
 
-    value, err := dbData.Get("hello")
-    if err != nil {
-        fmt.Println(err)
-    }
-	fmt.Println(value)
+    // value, err := dbData.Get("hello")
+    // if err != nil {
+    //     fmt.Println(err)
+    // }
+	// fmt.Println(value)
 
     keys, err := dbData.GetKeys()
     if err != nil {
         fmt.Println(err)
     }
     fmt.Println(keys)
-  
+
+	
+	// -------------cache------------ //
+	dbDataCache := NewRedisDatabaseWithCache(dbData)
+
+	value, err := dbDataCache.GetWithCache("hello")
+    if err != nil {
+        fmt.Println(err)
+    }
+	fmt.Println(value)
+
+	value, err = dbDataCache.GetWithCache("hello")
+    if err != nil {
+        fmt.Println(err)
+    }
+	fmt.Println(value)
 }
 
 type RedisDatabase struct {
@@ -63,6 +78,54 @@ func (d *RedisDatabase) GetKeys() ([]string, error) {
 
 	return slice, nil
 }
+
+
+// -------------cache------------ //
+
+type RedisDatabaseWithCache struct {
+	data *RedisDatabase
+	dataCache map[string]string 
+}
+
+func NewRedisDatabaseWithCache(data *RedisDatabase) *RedisDatabaseWithCache {
+	return &RedisDatabaseWithCache {
+		data: data,
+		dataCache: make(map[string]string),
+	}
+}
+
+func (d *RedisDatabaseWithCache) GetWithCache(key string) (string, error) {
+	value, ok := d.dataCache[key]
+	if ok {
+		fmt.Println("InCache")
+		return value, nil
+	} else {
+		value, err := d.data.Get(key)
+    	if err != nil {
+        	return "", err
+    	}
+		d.dataCache[key] = value
+		return value, err
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
